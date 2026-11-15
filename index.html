@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBMB – CURRENT WORK STATUS MONITORING | Ananthapuramu</title>
+  
+  <meta name="theme-color" content="#0b1f3a">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- SheetJS for Excel Exports -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Tricolor Ribbon -->
+  <div class="gov-top-bar"></div>
+
+  <!-- Government Portal Header with Official Mana Badi Image Banner -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <!-- Official Andhra Pradesh Mana Badi Header Banner Image -->
+        <div class="header-banner-wrap" title="Mana Badi - Mana Bhavishyathu | Government of Andhra Pradesh">
+          <img src="assets/header_banner.png" alt="Mana Badi - Mana Bhavishyathu" class="header-banner-img">
+        </div>
+        <div class="brand-text">
+          <h1>MBMB – <span class="highlight">CURRENT WORK STATUS MONITORING</span></h1>
+          <p>Ananthapuramu District | Department of School Education | Phase-II</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Live Connection Pill -->
+        <div class="badge-live-status" id="connectionBadge" title="Live Backend Status">
+          <span class="status-pulse" id="connectionPulse"></span>
+          <span id="connectionText">Master DB Loaded (1095 Schools)</span>
+        </div>
+
+        <!-- API Settings Button -->
+        <button class="btn-header" id="btnOpenSettings" title="Configure Google Apps Script Endpoint">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Backend API</span>
+        </button>
+
+        <!-- User Profile Area -->
+        <div class="user-profile-badge" id="userBadge" style="display: none;">
+          <div class="user-icon" id="userAvatar">A</div>
+          <div class="user-meta">
+            <span class="user-name" id="userDisplayName">User</span>
+            <span class="user-role" id="userRoleBadge">ROLE</span>
+          </div>
+          <button class="btn-header btn-logout" id="btnLogout" title="Logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar (Visible when logged in) -->
+  <nav class="nav-bar" id="navigationBar" style="display: none;">
+    <div class="nav-container" id="navTabsContainer">
+      <!-- Tabs injected dynamically per role -->
+    </div>
+  </nav>
+
+  <!-- Main Application Body -->
+  <main class="main-container">
+
+    <!-- ============================================================ -->
+    <!-- VIEW 0: PASSWORD-LESS ROLE-BASED ACCESS (SCHOOL, MANDAL, DIST) -->
+    <!-- ============================================================ -->
+    <section id="viewAuth" class="auth-wrapper">
+      <div class="auth-header-card">
+        <h2>Department Monitoring Portal Access</h2>
+        <p>Instant Access by School ID, Mandal Code, or District Admin | Mana Badi Phase-II</p>
+      </div>
+
+      <!-- Role Tabs: School, Mandal, District -->
+      <div class="auth-role-tabs">
+        <button type="button" class="auth-role-btn active" data-role="SCHOOL" id="roleTabSchool">
+          <i class="fa-solid fa-school fa-lg"></i>
+          <span>LEVEL 1: SCHOOL LOGIN</span>
+          <span class="role-sub">Enter School ID (No Password)</span>
+        </button>
+        <button type="button" class="auth-role-btn" data-role="MANDAL" id="roleTabMandal">
+          <i class="fa-solid fa-landmark fa-lg"></i>
+          <span>LEVEL 2: MANDAL LOGIN</span>
+          <span class="role-sub">Enter Mandal Code (No Password)</span>
+        </button>
+        <button type="button" class="auth-role-btn" data-role="DISTRICT" id="roleTabDistrict">
+          <i class="fa-solid fa-building-columns fa-lg"></i>
+          <span>LEVEL 3: DISTRICT LOGIN</span>
+          <span class="role-sub">Login ID: Admin</span>
+        </button>
+      </div>
+
+      <div class="auth-body">
+        <form id="authForm" autocomplete="off">
+          
+          <!-- Level 1: School Login (By School ID / UDISE Code) -->
+          <div id="authSchoolFields">
+            <div class="auth-form-group">
+              <label for="inputUdise"><i class="fa-solid fa-id-card text-muted"></i> Enter School ID (UDISE Code)</label>
+              <input type="text" id="inputUdise" class="auth-input" placeholder="e.g. 28222590122 or 1211122" maxlength="15" autofocus>
+              <div class="auth-help-text" style="color: #16a34a; font-weight: 600;">
+                <i class="fa-solid fa-circle-check"></i> No password needed. Entering School ID directly loads School Data & Work Status Entry Form.
+              </div>
+            </div>
+          </div>
+
+          <!-- Level 2: Mandal Login (By Mandal Code) -->
+          <div id="authMandalFields" style="display: none;">
+            <div class="auth-form-group">
+              <label for="inputMandalCode"><i class="fa-solid fa-hashtag text-muted"></i> Enter Mandal Code (or Choose Mandal)</label>
+              <input type="text" id="inputMandalCode" class="auth-input" list="mandalDatalist" placeholder="e.g. 282225, 282223, 282206 or Mandal Name">
+              <datalist id="mandalDatalist">
+                <!-- Dynamically populated with Mandal codes & names -->
+              </datalist>
+              <div class="auth-help-text" style="color: #16a34a; font-weight: 600; margin-top: 6px;">
+                <i class="fa-solid fa-circle-check"></i> No password needed. Entering Mandal Code loads all Mandal Schools with Work Progress & Official Reports.
+              </div>
+            </div>
+            <div class="auth-form-group" style="margin-top: 14px;">
+              <label for="selectMandalLogin" style="font-size: 11px; color: var(--text-muted);">Or select from all 32 Mandals:</label>
+              <select id="selectMandalLogin" class="auth-select">
+                <option value="">-- Choose from Mandal List --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Level 3: District Admin Login (ID: Admin) -->
+          <div id="authDistrictFields" style="display: none;">
+            <div class="auth-form-group">
+              <label for="inputAdminUser"><i class="fa-solid fa-user-shield text-muted"></i> District Administrator Login ID</label>
+              <input type="text" id="inputAdminUser" class="auth-input" value="Admin" placeholder="Admin">
+              <div class="auth-help-text" style="color: #16a34a; font-weight: 600; margin-top: 6px;">
+                <i class="fa-solid fa-circle-check"></i> District Login ID is "Admin". No password required.
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary-action" id="btnLoginSubmit">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span id="loginBtnText">Get School Data</span>
+          </button>
+        </form>
+
+        <!-- Quick Connect / Test Evaluator Switcher -->
+        <div class="demo-credentials-box">
+          <h4><i class="fa-solid fa-bolt text-warning"></i> Quick Evaluation & Instant 1-Click Verification</h4>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
+            Click any shortcut below to instantly load real records from the master Google Sheet:
+          </p>
+          <div class="demo-btn-grid">
+            <button class="btn-quick-login" onclick="quickLogin('SCHOOL', '28222590122')">
+              <strong>Level 1: School ID 28222590122</strong>
+              <span>12TH WARD MPL.CORP.PS (Urban)</span>
+            </button>
+            <button class="btn-quick-login" onclick="quickLogin('SCHOOL', '28222500103')">
+              <strong>Level 1: School ID 28222500103</strong>
+              <span>ZPHS TATICHERLA (Rural / ACR)</span>
+            </button>
+            <button class="btn-quick-login" onclick="quickLogin('MANDAL', '282225')">
+              <strong>Level 2: Mandal Code 282225</strong>
+              <span>ANANTAPUR Mandal Monitoring</span>
+            </button>
+            <button class="btn-quick-login" onclick="quickLogin('MANDAL', '282223')">
+              <strong>Level 2: Mandal Code 282223</strong>
+              <span>KALYANDRUG Mandal Monitoring</span>
+            </button>
+            <button class="btn-quick-login" onclick="quickLogin('DISTRICT', 'Admin')">
+              <strong>Level 3: District ID "Admin"</strong>
+              <span>District Dashboard (32 Mandals / 1095 Schools)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 1: LEVEL 1 - SCHOOL PORTAL & STATUS ENTRY FORM          -->
+    <!-- ============================================================ -->
+    <section id="viewSchoolPortal" style="display: none;">
+      
+      <!-- Mandal Level Update Mode Banner (Shown when editing from Mandal Login) -->
+      <div id="schoolReturnToMandalBanner" class="mandal-update-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <i class="fa-solid fa-user-shield fa-xl text-warning"></i>
+          <div>
+            <strong style="font-size: 15px; letter-spacing: 0.5px;">MANDAL LEVEL UPDATE MODE</strong>
+            <div style="font-size: 12px; color: #cbd5e1;">Updating Current Work Status for this school as Mandal Educational Officer</div>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary" onclick="returnToMandalPortal()" style="background: rgba(255,255,255,0.2); color:#fff; border: 1.5px solid rgba(255,255,255,0.4); font-weight: 700;">
+          <i class="fa-solid fa-arrow-left"></i> Return to Mandal Dashboard
+        </button>
+      </div>
+
+      <!-- School Information Banner (Read-only identification) -->
+      <div class="school-info-banner">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <span class="badge-tag" style="background: rgba(255,255,255,0.2); color: #fff;">LEVEL 1: SCHOOL RECORD</span>
+            <h2 id="schoolBannerName" style="font-size: 22px; font-weight: 800; margin-top: 6px;">School Name</h2>
+          </div>
+          <div id="schoolSubmissionStatusBadge">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <div class="school-info-grid">
+          <div class="info-item">
+            <div class="info-label">SI NO</div>
+            <div class="info-val" id="schoolBannerSiNo">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">School ID (UDISE)</div>
+            <div class="info-val" id="schoolBannerUdise">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Mandal</div>
+            <div class="info-val" id="schoolBannerMandal">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Mandal Code</div>
+            <div class="info-val" id="schoolBannerMandalCode">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">School Category</div>
+            <div class="info-val" id="schoolBannerCategory">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Management / Dept</div>
+            <div class="info-val" id="schoolBannerDept">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Unspent Balance (Col AF)</div>
+            <div class="info-val" id="schoolBannerUnspent" style="color: #16a34a; font-weight: 700;">₹ 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- School Dashboard Metrics Cards -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-info">
+            <div class="stat-label">Assigned Components</div>
+            <div class="stat-value" id="schoolStatTotalComp">0</div>
+            <div class="stat-sub">Sanctioned works</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-list-check"></i></div>
+        </div>
+
+        <div class="stat-card green">
+          <div class="stat-info">
+            <div class="stat-label">Completed Works</div>
+            <div class="stat-value" id="schoolStatCompleted">0</div>
+            <div class="stat-sub">100% finished (Disabled)</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+
+        <div class="stat-card orange">
+          <div class="stat-info">
+            <div class="stat-label">Active In-Progress</div>
+            <div class="stat-value" id="schoolStatInProgress">0</div>
+            <div class="stat-sub">Editable for updates</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-person-digging"></i></div>
+        </div>
+
+        <div class="stat-card red">
+          <div class="stat-info">
+            <div class="stat-label">Not Started / Pending</div>
+            <div class="stat-value" id="schoolStatNotStarted">0</div>
+            <div class="stat-sub">Requires update</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+
+        <div class="stat-card purple">
+          <div class="stat-info">
+            <div class="stat-label">Work Progress Rate</div>
+            <div class="stat-value" id="schoolStatRate">0%</div>
+            <div class="stat-sub">Overall completion</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-chart-pie"></i></div>
+        </div>
+      </div>
+
+      <!-- School Current Status Entry Form -->
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-pen-to-square text-primary fa-lg"></i>
+            <div>
+              <h3>Component-Wise Current Status Entry Form</h3>
+              <p class="card-subtitle">
+                <strong>Enforced Business Rule:</strong> If baseline column (H, J, L, N, P, R, T, V, X, Z, AB, AD) is <code>0</code> or <code>Completed</code>, the corresponding Current Status column (I, K, M, O, Q, S, U, W, Y, AA, AC, AE) is <strong>disabled</strong>.
+              </p>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary);" id="schoolLastUpdatedHeader">
+            <i class="fa-regular fa-clock"></i> Last Updated: <span id="schoolLastUpdatedTime">Not yet submitted</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <form id="schoolStatusForm">
+            <!-- Dynamically rendered component cards -->
+            <div id="componentsContainer"></div>
+
+            <!-- Additional Project Information: Columns AF, AG & AH -->
+            <div class="component-entry-card" style="border-left: 5px solid var(--gold-accent); margin-top: 24px;">
+              <div class="component-entry-header">
+                <div class="comp-title-group">
+                  <div class="comp-icon-badge" style="background: #fef3c7; color: #b45309;">AF / AG / AH</div>
+                  <div>
+                    <div class="comp-name">Financial & Overall Status Information (Columns AF, AG & AH) <span class="required-star">*</span></div>
+                    <div style="font-size: 11px; color: var(--text-muted);">
+                      Mandatory financial balances and school progress remarks recorded in master Google Spreadsheet
+                    </div>
+                  </div>
+                </div>
+                <span class="status-badge inprogress">Master Columns AF, AG & AH</span>
+              </div>
+
+              <div class="form-row-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                <!-- Column AF: Total Unspent amount in SMC Bank Accounts of MBMB Phase-II -->
+                <div class="form-field-group">
+                  <label for="inputUnspentAmount">
+                    <i class="fa-solid fa-piggy-bank text-success"></i> 
+                    <strong>Column AF: Unspent Amount in SMC Bank Account (₹)</strong> <span class="required-star">*</span>
+                  </label>
+                  <input type="text" class="entry-input" id="inputUnspentAmount" placeholder="e.g. 0 or 150000" required>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                    Total unspent balance in SMC Bank Account (Column AF in Sheet)
+                  </div>
+                </div>
+
+                <!-- Column AG: Value of the Pending Bills to be Upload due to various Technical Reasons -->
+                <div class="form-field-group">
+                  <label for="inputPendingBills">
+                    <i class="fa-solid fa-receipt text-warning"></i> 
+                    <strong>Column AG: Value of Pending Bills to be Uploaded (₹)</strong> <span class="required-star">*</span>
+                  </label>
+                  <input type="text" class="entry-input" id="inputPendingBills" placeholder="e.g. 0 or 45000" required>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                    Value of pending bills due to various technical reasons (Column AG in Sheet)
+                  </div>
+                </div>
+
+                <!-- Column AH: Remarks -->
+                <div class="form-field-group">
+                  <label for="inputGeneralRemarks">
+                    <i class="fa-solid fa-comment-dots text-primary"></i> 
+                    <strong>Column AH: School Remarks</strong> <span class="required-star">*</span>
+                  </label>
+                  <input type="text" class="entry-input" id="inputGeneralRemarks" placeholder="Enter school overall progress remarks..." required>
+                  <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                    Overall remarks and technical bottlenecks (Column AH in Sheet)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sticky Bottom Submission Action Bar -->
+            <div class="form-action-sticky-bar">
+              <div class="action-status-indicator">
+                <i class="fa-solid fa-shield-halved text-primary"></i>
+                <span id="formStatusMsg">All changes must be confirmed before final submission.</span>
+              </div>
+              <div class="action-buttons-group">
+                <button type="button" class="btn-secondary" id="btnSaveDraft">
+                  <i class="fa-regular fa-floppy-disk"></i> Save Draft
+                </button>
+                <button type="button" class="btn-secondary" id="btnViewPrevious">
+                  <i class="fa-solid fa-clock-rotate-left"></i> View Previous Status
+                </button>
+                <button type="button" class="btn-submit-final" id="btnSubmitStatus">
+                  <i class="fa-solid fa-paper-plane"></i> Submit Updates
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 2: LEVEL 2 - MANDAL DASHBOARD & SCHOOL MONITORING       -->
+    <!-- ============================================================ -->
+    <section id="viewMandalPortal" style="display: none;">
+      
+      <!-- Mandal Monitoring Executive Header -->
+      <div class="scorecard-header-card">
+        <div>
+          <span class="badge-tag" style="background: var(--saffron-orange); color: #fff;">LEVEL 2: MANDAL MONITORING</span>
+          <h2 id="mandalScorecardTitle" style="font-size: 24px; font-weight: 800; margin-top: 6px;">Mandal Monitoring Dashboard</h2>
+          <p id="mandalScorecardSubtitle" style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">
+            Mandal Code: <strong id="mandalScorecardCode">-</strong> | Ananthapuramu District | Department of School Education
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-header" onclick="exportMandalSchoolWiseReportExcel()" style="background: #16a34a; border-color: #15803d; font-weight: 700;">
+            <i class="fa-solid fa-file-excel"></i> Export School-Wise Report (.xlsx)
+          </button>
+          <button class="btn-header" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print Report (PDF)
+          </button>
+        </div>
+      </div>
+
+      <!-- Mandal Executive KPI Tiles -->
+      <div class="scorecard-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="scorecard-kpi-box">
+          <div class="kpi-label">Total Schools</div>
+          <div class="kpi-num" id="mandalStatTotalSchools" style="color: var(--primary-navy);">0</div>
+          <div style="font-size: 11px; color: var(--text-muted);">In this mandal</div>
+        </div>
+        <div class="scorecard-kpi-box">
+          <div class="kpi-label">Schools Submitted</div>
+          <div class="kpi-num" id="mandalStatSubmitted" style="color: #16a34a;">0</div>
+          <div style="font-size: 11px; color: #16a34a; font-weight: 600;">Compliant schools</div>
+        </div>
+        <div class="scorecard-kpi-box">
+          <div class="kpi-label">Schools Pending</div>
+          <div class="kpi-num" id="mandalStatPending" style="color: #dc2626;">0</div>
+          <div style="font-size: 11px; color: #dc2626; font-weight: 600;">Awaiting update</div>
+        </div>
+        <div class="scorecard-kpi-box">
+          <div class="kpi-label">Submission Rate</div>
+          <div class="kpi-num" id="mandalStatRate" style="color: #7e22ce;">0%</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Reporting rate</div>
+        </div>
+      </div>
+
+      <!-- All Mandals Official Submission Ranking & Report -->
+      <div class="card-section" id="sectionAllMandalsComparison">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-ranking-star text-primary fa-lg"></i>
+            <div>
+              <h3>All Mandals Official Submission Ranking & Report</h3>
+              <p class="card-subtitle">
+                Official ranking of all 32 Mandals in descending order of Submission %. Your mandal is highlighted below.
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" onclick="exportMandalWiseSubmissionReportExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export All Mandals Report (.xlsx)
+            </button>
+          </div>
+        </div>
+        <div class="spreadsheet-wrapper">
+          <table class="spreadsheet-table">
+            <thead>
+              <tr style="background: #0f172a; color: #fff;">
+                <th style="width: 70px; text-align: center;">SI.No</th>
+                <th>Mandal</th>
+                <th style="text-align: center;">Total School</th>
+                <th style="text-align: center; background: #15803d; color: #fff;">No Of Schools Submitted</th>
+                <th style="text-align: center; background: #b91c1c; color: #fff;">No of Pending Schools</th>
+                <th style="text-align: center; background: #1e3a8a; color: #fff;">% of Schools Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="mandalPortalAllMandalsBody">
+              <!-- Dynamically injected rows with current mandal highlighted -->
+            </tbody>
+            <tfoot id="mandalPortalAllMandalsFoot">
+              <!-- Summary row -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mandal Schools Detailed Performance & Monitoring Table -->
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-table-list text-primary fa-lg"></i>
+            <div>
+              <h3>Mandal School-Wise Work Progress Table</h3>
+              <p class="card-subtitle">Showing all schools in this mandal. Click <strong>"Update"</strong> on any school row to edit its status directly.</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="exportMandalSchoolWiseReportExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export School-Wise Report (.xlsx)
+            </button>
+            <button class="btn-secondary" id="btnToggleColsEG_Mandal">
+              <i class="fa-solid fa-eye"></i> <span id="toggleColsEGLabel_Mandal">Show Cols E, F, G (Category, Mgt, Dept)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-filter-bar">
+          <div class="filter-controls">
+            <div class="search-box-wrap">
+              <i class="fa-solid fa-magnifying-glass search-icon-svg"></i>
+              <input type="text" id="mandalTableSearch" placeholder="Search school name or UDISE...">
+            </div>
+            <select id="mandalSubmissionFilter" class="table-filter-select">
+              <option value="ALL">All Submission Statuses</option>
+              <option value="SUBMITTED">Submitted Only</option>
+              <option value="PENDING">Pending Only</option>
+            </select>
+            <select id="mandalQuickSchoolSelect" class="table-filter-select" onchange="if(this.value) openSchoolUpdateFromMandal(this.value)" style="font-weight: 700; color: var(--primary-blue); border-color: #bfdbfe;">
+              <option value="">-- Quick Update School Status --</option>
+            </select>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+            Showing <span id="mandalFilteredCount">0</span> schools
+          </div>
+        </div>
+
+        <!-- Scrollable Table with Row 1 as Column Headers and Frozen A, B, C -->
+        <div class="spreadsheet-wrapper">
+          <table class="spreadsheet-table" id="mandalSchoolsTable">
+            <!-- Injected dynamically with single clean header row -->
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 3: LEVEL 3 - DISTRICT CONSOLIDATED DASHBOARD & MASTER   -->
+    <!-- ============================================================ -->
+    <section id="viewDistrictPortal" style="display: none;">
+      
+      <!-- District Dashboard Header -->
+      <div class="school-info-banner" style="background: linear-gradient(135deg, #09182d 0%, #172554 100%);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <span class="badge-tag" style="background: var(--gold-accent); color: #fff;">LEVEL 3: DISTRICT DASHBOARD</span>
+            <h2 style="font-size: 24px; font-weight: 800; margin-top: 6px;">Ananthapuramu District Monitoring Dashboard</h2>
+            <p style="font-size: 13px; color: #cbd5e1; margin-top: 4px;">Department of School Education | Phase-II Comprehensive Tracking</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-header" onclick="exportDistrictMasterExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export Master (.xlsx)
+            </button>
+            <button class="btn-header" onclick="window.print()">
+              <i class="fa-solid fa-print"></i> Print Report (PDF)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- District Metrics Grid -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-info">
+            <div class="stat-label">Total Mandals</div>
+            <div class="stat-value" id="distStatTotalMandals">32</div>
+            <div class="stat-sub">Covering full district</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+        </div>
+
+        <div class="stat-card blue">
+          <div class="stat-info">
+            <div class="stat-label">Total Schools</div>
+            <div class="stat-value" id="distStatTotalSchools">1095</div>
+            <div class="stat-sub">Across 32 Mandals</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-school"></i></div>
+        </div>
+
+        <div class="stat-card green">
+          <div class="stat-info">
+            <div class="stat-label">Submitted Schools</div>
+            <div class="stat-value" id="distStatSubmitted">0</div>
+            <div class="stat-sub">Updated current status</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+
+        <div class="stat-card red">
+          <div class="stat-info">
+            <div class="stat-label">Pending Schools</div>
+            <div class="stat-value" id="distStatPending">1095</div>
+            <div class="stat-sub">Awaiting updates</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+        </div>
+
+        <div class="stat-card purple">
+          <div class="stat-info">
+            <div class="stat-label">District Submission %</div>
+            <div class="stat-value" id="distStatRate">0%</div>
+            <div class="stat-sub">District-wide progress</div>
+          </div>
+          <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+        </div>
+      </div>
+
+      <!-- Mandal Comparison Cards -->
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-chart-simple text-primary fa-lg"></i>
+            <div>
+              <h3>Mandal-Wise Progress & Submission Performance (32 Mandals)</h3>
+              <p class="card-subtitle">Click on any Mandal card to filter and inspect schools instantly</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="mandal-cards-grid" id="mandalCardsGrid">
+            <!-- Mandal performance cards injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Official Mandal-Wise Submission Performance Table (Sorted Descending) -->
+      <div class="card-section" id="sectionMandalWiseReport">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-ranking-star text-primary fa-lg"></i>
+            <div>
+              <h3>Mandal-Wise Submission Performance Report (Official)</h3>
+              <p class="card-subtitle">
+                Ranked in descending order of % of Schools Submitted | SI.No, Mandal, Total School, No Of Schools Submitted, No of Pending Schools, % of Schools Submitted
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="exportMandalWiseSubmissionReportExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export Mandal Report (.xlsx)
+            </button>
+            <button class="btn-secondary" onclick="window.print()">
+              <i class="fa-solid fa-print"></i> Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="table-filter-bar">
+          <div class="filter-controls">
+            <div class="search-box-wrap">
+              <i class="fa-solid fa-magnifying-glass search-icon-svg"></i>
+              <input type="text" id="mandalReportSearch" placeholder="Search Mandal name...">
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+            32 Mandals Ranked in Descending Order of % Submitted
+          </div>
+        </div>
+
+        <div class="spreadsheet-wrapper">
+          <table class="spreadsheet-table" id="mandalWiseSubmissionTable">
+            <thead>
+              <tr style="background: #0f172a; color: #fff;">
+                <th style="width: 70px; text-align: center;">SI.No</th>
+                <th>Mandal</th>
+                <th style="text-align: center;">Total School</th>
+                <th style="text-align: center; background: #15803d; color: #fff;">No Of Schools Submitted</th>
+                <th style="text-align: center; background: #b91c1c; color: #fff;">No of Pending Schools</th>
+                <th style="text-align: center; background: #1e3a8a; color: #fff;">% of Schools Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="mandalWiseSubmissionTableBody">
+              <!-- Dynamically populated in descending order of % submitted -->
+            </tbody>
+            <tfoot id="mandalWiseSubmissionTableFoot">
+              <!-- District total summary row -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- District Master Spreadsheet Table (Columns A-AH with Frozen A, B, C) -->
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-table-cells text-primary fa-lg"></i>
+            <div>
+              <h3>Master Database & Current Status Table (Columns A through AH)</h3>
+              <p class="card-subtitle">
+                Columns A, B, C frozen through Column C. Columns E, F, G hidden by default. Columns I, K, M, O, Q, S, U, W, Y, AA, AC, AE disabled if baseline is 0 or Completed. Includes Col AF (Unspent SMC Bank), Col AG (Pending Bills) & Col AH (Remarks).
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" id="btnToggleColsEG_Dist">
+              <i class="fa-solid fa-eye"></i> <span id="toggleColsEGLabel_Dist">Show Cols E, F, G</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="table-filter-bar">
+          <div class="filter-controls">
+            <div class="search-box-wrap">
+              <i class="fa-solid fa-magnifying-glass search-icon-svg"></i>
+              <input type="text" id="distTableSearch" placeholder="Search school name or UDISE...">
+            </div>
+            <select id="distMandalFilter" class="table-filter-select">
+              <option value="ALL">All Mandals (32)</option>
+            </select>
+            <select id="distComponentFilter" class="table-filter-select">
+              <option value="ALL">All Components</option>
+              <option value="acrs">ACRs</option>
+              <option value="compoundWall">Compound Wall</option>
+              <option value="toilets">Toilets</option>
+              <option value="kitchenShed">Kitchen Shed</option>
+              <option value="repairs">Major & Minor Repairs</option>
+              <option value="electrification">Electrification</option>
+              <option value="drinkingWater">Drinking Water</option>
+              <option value="painting">Painting</option>
+            </select>
+            <select id="distStatusFilter" class="table-filter-select">
+              <option value="ALL">All Submission Statuses</option>
+              <option value="SUBMITTED">Submitted Only</option>
+              <option value="PENDING">Pending Only</option>
+            </select>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+            Displaying <span id="distFilteredCount">1095</span> of 1095 Schools
+          </div>
+        </div>
+
+        <!-- Scrollable Table with Frozen A, B, C and Auto-fit Headers -->
+        <div class="spreadsheet-wrapper">
+          <table class="spreadsheet-table" id="districtMasterTable">
+            <!-- Header and Rows injected dynamically -->
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 4: REPORTS & ANALYTICS                                  -->
+    <!-- ============================================================ -->
+    <section id="viewReports" style="display: none;">
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-file-lines text-primary fa-lg"></i>
+            <div>
+              <h3>District Monitoring Reports & Statistical Analysis</h3>
+              <p class="card-subtitle">Generate, filter and export 8 official reports in Excel and PDF formats</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" onclick="exportCurrentReportExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export to Excel
+            </button>
+            <button class="btn-secondary" onclick="window.print()">
+              <i class="fa-solid fa-print"></i> Print / PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="table-filter-bar">
+          <div class="filter-controls">
+            <select id="reportTypeSelect" class="table-filter-select" style="font-weight: 700;">
+              <option value="1">1. Mandal-Wise Submission Performance Report (% Descending - Official)</option>
+              <option value="2">2. District-wise Consolidated Summary Report</option>
+              <option value="3">3. School-wise Detailed Progress Report</option>
+              <option value="4">4. Component-wise Progress Report</option>
+              <option value="5">5. Current Status Tracking Report</option>
+              <option value="6">6. Pending Schools (Defaulters) Report</option>
+              <option value="7">7. Date-wise Submission Report</option>
+              <option value="8">8. Last Updated Status Report</option>
+            </select>
+            <select id="reportMandalFilter" class="table-filter-select">
+              <option value="ALL">All Mandals</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div id="reportContentArea">
+            <!-- Dynamic Report Tables rendered here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 5: AUDIT HISTORY TRAIL                                  -->
+    <!-- ============================================================ -->
+    <section id="viewAuditTrail" style="display: none;">
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-shield-halved text-primary fa-lg"></i>
+            <div>
+              <h3>System Audit Trail & Submission History</h3>
+              <p class="card-subtitle">Immutable log of all current status updates, Columns AG & AH, timestamps and users</p>
+            </div>
+          </div>
+          <div>
+            <button class="btn-secondary" onclick="exportAuditTrailExcel()">
+              <i class="fa-solid fa-file-excel"></i> Export Audit Log
+            </button>
+          </div>
+        </div>
+
+        <div class="table-filter-bar">
+          <div class="filter-controls">
+            <div class="search-box-wrap">
+              <i class="fa-solid fa-magnifying-glass search-icon-svg"></i>
+              <input type="text" id="auditSearchInput" placeholder="Filter by UDISE, school or user...">
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+            Total Logged Events: <span id="auditTotalEvents">0</span>
+          </div>
+        </div>
+
+        <div class="card-body" style="padding: 0;">
+          <div class="spreadsheet-wrapper">
+            <table class="spreadsheet-table" id="auditTable">
+              <thead>
+                <tr style="background: #0f2b5c; color: #fff;">
+                  <th>Timestamp (IST)</th>
+                  <th>UDISE Code</th>
+                  <th>School Name</th>
+                  <th>Mandal</th>
+                  <th>Component / Field</th>
+                  <th>Previous Status / Value</th>
+                  <th>New Status / Value</th>
+                  <th>Remarks</th>
+                  <th>Updated By</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- VIEW 6: USER MANAGEMENT & ROLE PERMISSIONS                   -->
+    <!-- ============================================================ -->
+    <section id="viewUserMgmt" style="display: none;">
+      <div class="card-section">
+        <div class="card-header">
+          <div class="card-title-group">
+            <i class="fa-solid fa-users-gear text-primary fa-lg"></i>
+            <div>
+              <h3>User Accounts & Role Permissions Management</h3>
+              <p class="card-subtitle">Manage District Admin, Mandal Nodal Officers and School HM credentials</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="stats-grid">
+            <div class="stat-card blue">
+              <div class="stat-info">
+                <div class="stat-label">Level 1: School Access</div>
+                <div class="stat-value">1,095</div>
+                <div class="stat-sub">By School ID (No Password)</div>
+              </div>
+              <div class="stat-icon"><i class="fa-solid fa-school"></i></div>
+            </div>
+            <div class="stat-card purple">
+              <div class="stat-info">
+                <div class="stat-label">Level 2: Mandal Access</div>
+                <div class="stat-value">32</div>
+                <div class="stat-sub">By Mandal Code (No Password)</div>
+              </div>
+              <div class="stat-icon"><i class="fa-solid fa-landmark"></i></div>
+            </div>
+            <div class="stat-card orange">
+              <div class="stat-info">
+                <div class="stat-label">Level 3: District Access</div>
+                <div class="stat-value">Admin</div>
+                <div class="stat-sub">Login ID: Admin</div>
+              </div>
+              <div class="stat-icon"><i class="fa-solid fa-user-shield"></i></div>
+            </div>
+          </div>
+
+          <div class="spreadsheet-wrapper" style="margin-top: 20px;">
+            <table class="spreadsheet-table">
+              <thead>
+                <tr>
+                  <th>Role Level</th>
+                  <th>Entity Identifier</th>
+                  <th>Account Name</th>
+                  <th>Access Method</th>
+                  <th>Permission Level</th>
+                  <th>Default Login Credential</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-tag" style="background:#dbeafe; color:#1e3a8a;">LEVEL 3</span></td>
+                  <td>DIST_ATP</td>
+                  <td>District Educational Officer / Administrator</td>
+                  <td>Direct Login with ID "Admin"</td>
+                  <td>Full District View, Master Reports, Excel/PDF Exports</td>
+                  <td>Login ID: <code>Admin</code> (No Password)</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-tag" style="background:#f3e8ff; color:#7e22ce;">LEVEL 2</span></td>
+                  <td>MANDAL (32)</td>
+                  <td>Mandal Educational Officer (e.g. Code 282225)</td>
+                  <td>Direct Login with Mandal Code</td>
+                  <td>Mandal Dashboard, School-wise Report, Non-Submitted Defaulters</td>
+                  <td><code>{Mandal Code}</code> (No Password)</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-tag" style="background:#ffedd5; color:#ea580c;">LEVEL 1</span></td>
+                  <td>UDISE (1095)</td>
+                  <td>School Head Master / SMC (e.g. 28222590122)</td>
+                  <td>Direct Login with School ID</td>
+                  <td>Update permitted Current Status columns, Columns AG & AH, Save Draft</td>
+                  <td><code>{SCHOOL_ID}</code> (No Password)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- CINEMATIC FOOTER                                             -->
+  <!-- ============================================================ -->
+  <footer class="cinematic-footer">
+    <div class="cinematic-footer-glow"></div>
+    <div class="cinematic-footer-container">
+      <div class="cinematic-badge">
+        <span class="cinematic-dot"></span>
+        <span>DEPARTMENT OF SCHOOL EDUCATION &bull; ANANTHAPURAMU DISTRICT</span>
+      </div>
+      <div class="cinematic-credits">
+        <span class="credits-label">CONCEPT &bull; SYSTEM ARCHITECTURE &bull; EXECUTION</span>
+        <h3 class="credits-name">Developed by J.Narayanaswamy</h3>
+        <p class="credits-designation">APO APSS Ananthapuramu</p>
+      </div>
+      <div class="cinematic-subtext">
+        Mana Badi Nadu-Nedu / MBMB Phase-II Current Work Status Monitoring Portal &bull; Government of Andhra Pradesh
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: GOOGLE APPS SCRIPT BACKEND SETTINGS                   -->
+  <!-- ============================================================ -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-cloud-arrow-up"></i> Google Apps Script Backend Settings</h3>
+        <button class="btn-close-modal" id="btnCloseSettings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+          Connect this web application directly to your live Google Sheet backend via Google Apps Script Web App API:
+        </p>
+
+        <div class="auth-form-group">
+          <label for="inputGasUrl"><strong>Google Apps Script Web App URL</strong></label>
+          <input type="text" id="inputGasUrl" class="auth-input" placeholder="https://script.google.com/macros/s/.../exec">
+          <div class="auth-help-text">
+            The Web App URL generated when you deploy the Apps Script from Extensions &gt; Apps Script.
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 14px; margin-top: 14px; font-size: 12px;">
+          <strong><i class="fa-solid fa-circle-info text-primary"></i> Master Database Details:</strong>
+          <ul style="margin-left: 20px; margin-top: 6px; line-height: 1.6;">
+            <li><strong>Spreadsheet ID:</strong> <code>1USCcrxYEBIY3r9LCxcGJQjgs2lrr9vtXTsxn6ybqWaE</code></li>
+            <li><strong>Master Sheet Tab:</strong> <code>Master</code> (1,095 Schools, 32 Mandals, 34 Columns A through AH)</li>
+            <li><strong>Row 1:</strong> Column Headers (A1 through AH1)</li>
+            <li><strong>Row 2+:</strong> Master School Data Records</li>
+            <li><strong>Authentication:</strong> Level 1 School Login by School ID; Level 2 Mandal Login by Mandal Code; Level 3 District Login by "Admin".</li>
+            <li><strong>Columns AG & AH:</strong> Col AG (Value of Pending Bills) & Col AH (Remarks) fully supported.</li>
+            <li><strong>Rule Enforced:</strong> If baseline (H, J, L, N, P, R, T, V, X, Z, AB, AD) is <code>0</code> or <code>Completed</code>, corresponding next column (I, K, M, O, Q, S, U, W, Y, AA, AC, AE) is disabled.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnTestApi">
+          <i class="fa-solid fa-vial"></i> Test Connection
+        </button>
+        <button class="btn-primary" id="btnSaveGasUrl">
+          <i class="fa-solid fa-check"></i> Save & Connect
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: FINAL SUBMISSION CONFIRMATION                         -->
+  <!-- ============================================================ -->
+  <div class="modal-overlay" id="confirmSubmitModal">
+    <div class="modal-container">
+      <div class="modal-header" style="background: #166534;">
+        <h3><i class="fa-solid fa-circle-check"></i> Confirm Final Work Status Submission</h3>
+        <button class="btn-close-modal" id="btnCloseConfirmModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 13px; color: var(--text-primary); line-height: 1.6;">
+          <p>You are about to submit the Current Work Status updates for:</p>
+          <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-weight: 700; color: #0f2b5c;" id="confirmSchoolName">
+            -
+          </div>
+          <p>Please review the stage updates below before final submission to the Master Google Spreadsheet:</p>
+          
+          <div id="confirmChangesList" style="max-height: 250px; overflow-y: auto; margin: 12px 0; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
+            <!-- Injected list of changes -->
+          </div>
+
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+            <i class="fa-solid fa-lock"></i> Master school information (Columns A-G) and disabled baseline components (0 or Completed) will remain intact. Only permitted Current Status columns and Columns AG & AH will be updated with an audit log entry.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnCancelSubmit">
+          <i class="fa-solid fa-pen"></i> Edit Before Submission
+        </button>
+        <button class="btn-submit-final" id="btnConfirmFinalSubmit">
+          <i class="fa-solid fa-check-double"></i> Confirm & Submit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Pre-loaded Live Master Dataset (34 Columns, 1095 Schools, 32 Mandals) -->
+  <script src="data/master_data.js"></script>
+
+  <!-- Application Logic -->
+  <script src="js/app.js"></script>
+</body>
+</html>
